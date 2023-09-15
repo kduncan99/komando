@@ -1,8 +1,6 @@
-package com.bearsnake.kommando;
+package com.bearsnake.komando;
 
-import com.bearsnake.kommando.exceptions.KommandoException;
-
-import static com.bearsnake.kommando.ValueType.STRING;
+import com.bearsnake.komando.exceptions.KommandoException;
 
 public class Main {
 
@@ -16,17 +14,17 @@ public class Main {
                                                          .setIsRequired(false)
                                                          .setIsMultiple(false)
                                                          .setValueName("user")
-                                                         .setValueType(STRING)
+                                                         .setValueType(ValueType.STRING)
                                                          .build();
 
         var posArg1 = new PositionalArgument.Builder().setValueName("inputFile")
-                                                      .setValueType(STRING)
+                                                      .setValueType(ValueType.STRING)
                                                       .addDescription("Path and filename for the input file.")
                                                       .setIsRequired(true)
                                                       .build();
 
         var posArg2 = new PositionalArgument.Builder().setValueName("outputFile")
-                                                      .setValueType(STRING)
+                                                      .setValueType(ValueType.STRING)
                                                       .addDescription("Path and filename for the output file.")
                                                       .addDescription("If not specified, output is written to stdout.")
                                                       .setIsRequired(false)
@@ -39,7 +37,7 @@ public class Main {
            .addPositionalArgument(posArg1)
            .addPositionalArgument(posArg2);
 
-        var args = new String[]{
+        var testArgs = new String[]{
             "Flip", "-v", "-h",
         };
 

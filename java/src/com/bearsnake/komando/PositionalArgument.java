@@ -2,10 +2,10 @@
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
-package com.bearsnake.kommando;
+package com.bearsnake.komando;
 
-import com.bearsnake.kommando.exceptions.FieldNotSpecifiedException;
-import com.bearsnake.kommando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.FieldNotSpecifiedException;
+import com.bearsnake.komando.exceptions.KommandoException;
 
 import java.util.LinkedList;
 import java.util.List;

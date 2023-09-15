@@ -2,7 +2,7 @@
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
-package com.bearsnake.kommando;
+package com.bearsnake.komando;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -2,9 +2,9 @@
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
-package com.bearsnake.kommando;
+package com.bearsnake.komando;
 
-import com.bearsnake.kommando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.KommandoException;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -136,20 +136,61 @@ public class CommandLineHandler {
 
         var ax = 0;
         var posArgX = 0;
+        var checkSwitch = true;
         while (ax < args.length) {
-            if (args[ax].startsWith("--")) {
-                // TODO look for switch long name
-            } else if (args[ax].startsWith("-")) {
-                // TODO look for switch short name
-            } else {
-                //  TODO this is a positional arg
-                if (posArgX == _positionalArguments.size()) {
-                    var msg = String.format("Error at '%s': Too many positional arguments", args[ax]);
-                    messages.add(msg);
-                    ax++;
-                } else {
-                    //  TODO
+            var arg = args[ax++];
+
+            //  Is this a switch?
+            if (checkSwitch) {
+                Switch sw = null;
+                if (arg.startsWith("--")) {
+                    var chopArg = arg.substring(2);
+                    if (chopArg.isEmpty()) {
+                        checkSwitch = false;
+                        continue;
+                    }
+
+                    for (var chkSw : _switches) {
+                        if (chopArg.equals(chkSw._longName)) {
+                            sw = chkSw;
+                            break;
+                        }
+                    }
+                } else if (arg.startsWith("-")) {
+                    var chopArg = arg.substring(1);
+                    if (chopArg.isEmpty()) {
+                        // TODO error, simple hyphen is illegal
+                        continue;
+                    }
+
+                    for (var chkSw : _switches) {
+                        if (chopArg.equals(chkSw._shortName)) {
+                            sw = chkSw;
+                            break;
+                        }
+                    }
                 }
+
+                if (sw == null) {
+                    // TODO error - switch not found
+                }
+
+                String value = null;
+                if (sw instanceof ArgumentSwitch as) {
+                    // TODO find value for argument switch
+                    //  is it 'switch=value' or 'switch value'
+                }
+
+                // TODO handle switch
+            }
+
+            //  This is a positional arg
+            if (posArgX == _positionalArguments.size()) {
+                var msg = String.format("Error at '%s': Too many positional arguments", args[ax]);
+                messages.add(msg);
+                ax++;
+            } else {
+                // TODO handle argument
             }
         }
 
