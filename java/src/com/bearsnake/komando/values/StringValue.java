@@ -20,6 +20,11 @@ public class StringValue extends Value {
         return _value;
     }
 
+    @Override
+    public String toString() {
+        return _value;
+    }
+
     public static StringValue parse(
         final String input
     ) throws ParseException {
@@ -35,14 +40,14 @@ public class StringValue extends Value {
                 delimiter = ch;
             } else if (inDelimiter && (ch == delimiter)) {
                 inDelimiter = false;
-            } else if (delimited) {
+            } else if (!inDelimiter && delimited) {
                 throw new ParseException("Improperly-delimited string value");
             } else {
                 sb.append(ch);
             }
         }
 
-        if (delimited) {
+        if (inDelimiter) {
             throw new ParseException("Missing closing delimiter for string value");
         }
 

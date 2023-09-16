@@ -24,6 +24,10 @@ public abstract class Switch {
 
     @Override
     public final String toString() {
-        return String.format("-%s/--%s", _shortName, _longName);
+        if (_longName == null) {
+            return String.format("-%s", _shortName);
+        } else {
+            return String.format("-%s/--%s", _shortName, _longName);
+        }
     }
 }

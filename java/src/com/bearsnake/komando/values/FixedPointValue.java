@@ -20,6 +20,11 @@ public class FixedPointValue extends Value {
         return _value;
     }
 
+    @Override
+    public String toString() {
+        return _value.toString();
+    }
+
     public static FixedPointValue parse(
         final String input
     ) throws ParseException {

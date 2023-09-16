@@ -34,4 +34,7 @@ public abstract class Value {
             case STRING -> StringValue.parse(input);
         };
     }
+
+    @Override
+    public abstract String toString();
 }

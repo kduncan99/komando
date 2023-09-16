@@ -22,6 +22,30 @@ public class Main {
                                                          .setValueType(ValueType.STRING)
                                                          .build();
 
+        var passwordSwitch = new ArgumentSwitch.Builder().setShortName("p")
+                                                         .setLongName("password")
+                                                         .addDescription("Password credentials for access to the flux capacitor.")
+                                                         .setIsRequired(false)
+                                                         .setIsMultiple(false)
+                                                         .setValueName("pwd")
+                                                         .setValueType(ValueType.STRING)
+                                                         .build();
+
+        var boolSwitch = new ArgumentSwitch.Builder().setShortName("b")
+                                                     .setLongName("bool")
+                                                     .addDescription("An array of bools")
+                                                     .setIsMultiple(true)
+                                                     .setValueName("boolValue")
+                                                     .setValueType(ValueType.BOOLEAN)
+                                                     .build();
+
+        var intSwitch = new ArgumentSwitch.Builder().setShortName("i")
+                                                    .addDescription("integer value")
+                                                    .setIsMultiple(true)
+                                                    .setValueName("intValue")
+                                                    .setValueType(ValueType.FIXED_POINT)
+                                                    .build();
+
         var posArg1 = new PositionalArgument.Builder().setValueName("inputFile")
                                                       .setValueType(ValueType.STRING)
                                                       .addDescription("Path and filename for the input file.")
@@ -39,13 +63,48 @@ public class Main {
         clh.addCanonicalHelpSwitch()
            .addCanonicalVersionSwitch()
            .addSwitch(usernameSwitch)
+           .addSwitch(passwordSwitch)
+           .addSwitch(boolSwitch)
+           .addSwitch(intSwitch)
            .addPositionalArgument(posArg1)
-           .addPositionalArgument(posArg2);
+           .addPositionalArgument(posArg2)
+           .addDependency(usernameSwitch, passwordSwitch)
+           .addMutualExclusion(boolSwitch, intSwitch);
 
-        var testArgs = new String[]{
-            "Flip", "-v", "-h",
+        var testArgs = new String[] {
+            "-u=kduncan", "-p=foo", "-i=42,-55,0X1000", "inpFile", "outpFile", "overFile"
         };
 
-        //clh.displayUsage("Flabber");
+        var result = clh.processCommandLine(testArgs);
+        if (result.hasErrors()) {
+            System.out.println("Found errors.");
+        }
+
+        if (result.hasWarnings()) {
+            System.out.println("Found warnings.");
+        }
+
+        for (var msg : result._messages) {
+            System.out.println(msg);
+        }
+
+        System.out.println("Switches:");
+        for (var swEntry : result._switchSpecifications.entrySet()) {
+            var sw = swEntry.getKey();
+            var values = swEntry.getValue();
+            System.out.println("  " + sw.toString() + ":");
+            if (values != null) {
+                for (var value : values) {
+                    System.out.printf("    %s\n", value.toString());
+                }
+            }
+        }
+
+        System.out.println("PosArgs:");
+        for (int px = 0; px < result._positionalArgumentSpecifications.size(); ++px) {
+            System.out.printf("  %d:%s\n", px, result._positionalArgumentSpecifications.get(px).toString());
+        }
+
+        //clh.displayUsage("flip");
     }
 }

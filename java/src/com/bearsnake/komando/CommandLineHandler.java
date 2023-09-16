@@ -191,19 +191,11 @@ public class CommandLineHandler {
             }
         }
 
-        // check for required switches and positional arguments
+        // check for required switches
         for (var swch : _switches) {
             if (swch.isRequired() && !_switchSpecifications.containsKey(swch)) {
                 _messages.add(new SwitchMessage(MessageType.ERROR, swch, "Required but not specified"));
             }
-        }
-
-        int px = 0;
-        for (var posArg : _positionalArguments) {
-            if (posArg.isRequired() && (px > _positionalSpecifications.size())) {
-                _messages.add(new PositionalArgumentMessage(MessageType.ERROR, posArg, "Required but not specified"));
-            }
-            px++;
         }
 
         // check for dependencies
@@ -220,6 +212,15 @@ public class CommandLineHandler {
                 var msg = String.format("May not be specified with switch %s", ex._switch2.toString());
                 _messages.add(new SwitchMessage(MessageType.ERROR, ex._switch1, msg));
             }
+        }
+
+        // check for required positional arguments
+        int px = 0;
+        for (var posArg : _positionalArguments) {
+            if (posArg.isRequired() && (px >= _positionalSpecifications.size())) {
+                _messages.add(new PositionalArgumentMessage(MessageType.ERROR, posArg, "Required but not specified"));
+            }
+            px++;
         }
 
         return new Result(_messages, _switchSpecifications, _positionalSpecifications);

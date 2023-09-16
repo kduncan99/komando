@@ -20,6 +20,11 @@ public class FloatingPointValue extends Value {
         return _value;
     }
 
+    @Override
+    public String toString() {
+        return _value.toString();
+    }
+
     public static FloatingPointValue parse(
         final String input
     ) throws ParseException {

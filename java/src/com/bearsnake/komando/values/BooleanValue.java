@@ -20,6 +20,11 @@ public class BooleanValue extends Value {
         return _value;
     }
 
+    @Override
+    public String toString() {
+        return _value.toString();
+    }
+
     public static BooleanValue parse(
         final String input
     ) throws ParseException {
