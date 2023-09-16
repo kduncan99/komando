@@ -19,4 +19,11 @@ public abstract class Switch {
         _longName = longName;
         _description = description;
     }
+
+    public abstract boolean isRequired();
+
+    @Override
+    public final String toString() {
+        return String.format("-%s/--%s", _shortName, _longName);
+    }
 }

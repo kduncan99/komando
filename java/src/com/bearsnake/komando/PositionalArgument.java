@@ -6,6 +6,7 @@ package com.bearsnake.komando;
 
 import com.bearsnake.komando.exceptions.FieldNotSpecifiedException;
 import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.values.ValueType;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -17,10 +18,10 @@ import java.util.List;
  */
 public class PositionalArgument {
 
-    public final String[] _description;
-    public final boolean _isRequired;
-    public final String _valueName;
-    public final ValueType _valueType;
+    private final String[] _description;
+    private final boolean _isRequired;
+    private final String _valueName;
+    private final ValueType _valueType;
 
     public PositionalArgument(
         final String[] description,
@@ -33,6 +34,11 @@ public class PositionalArgument {
         _valueName = valueName;
         _valueType = valueType;
     }
+
+    public String[] getDescription() { return _description; }
+    public boolean isRequired() { return _isRequired; }
+    public String getValueName() { return _valueName; }
+    public ValueType getValueType() { return _valueType; }
 
     public static class Builder {
         private final List<String> _description = new LinkedList<>();

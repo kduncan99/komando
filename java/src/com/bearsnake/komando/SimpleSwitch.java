@@ -24,6 +24,11 @@ public class SimpleSwitch extends Switch {
         super(_shortName, _longName, _description);
     }
 
+    @Override
+    public boolean isRequired() {
+        return false;
+    }
+
     public static class Builder {
         private final List<String> _description = new LinkedList<>();
         private String _longName = null;

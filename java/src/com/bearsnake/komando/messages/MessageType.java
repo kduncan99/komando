@@ -2,18 +2,18 @@
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
-package com.bearsnake.komando;
+package com.bearsnake.komando.messages;
 
-public enum ProcessMessageType {
+public enum MessageType {
 
-    Informational("INFO"),
-    Warning("WARN"),
-    Error("ERROR"),
-    Fatal("FATAL");
+    ERROR("ERROR"),
+    FATAL("FATAL"),
+    INFORMATIONAL("INFO"),
+    WARNING("WARN");
 
     public final String _value;
 
-    ProcessMessageType(
+    MessageType(
         final String value
     ) {
         _value = value;
