@@ -5,6 +5,7 @@
 package com.bearsnake.komando;
 
 import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.values.ValueType;
 
 public class Main {
 

@@ -10,6 +10,7 @@ import com.bearsnake.komando.messages.Message;
 import com.bearsnake.komando.messages.MessageType;
 import com.bearsnake.komando.messages.PositionalArgumentMessage;
 import com.bearsnake.komando.messages.SwitchMessage;
+import com.bearsnake.komando.values.EmptyValue;
 import com.bearsnake.komando.values.Value;
 
 import java.util.*;
@@ -268,9 +269,21 @@ public class CommandLineHandler {
     }
 
     private void processPositionalArgument(
-        final String arg
+        final String argText
     ) {
-        // TODO
+        if (_positionalSpecifications.size() == _positionalArguments.size()) {
+            _messages.add(new Message(MessageType.WARNING, "Extraneous arguments are ignored"));
+            return;
+        }
+
+        var arg = _positionalArguments.get(_positionalSpecifications.size());
+        try {
+            var value = Value.parseText(argText, arg.getValueType());
+            _positionalSpecifications.add(value);
+        } catch (ParseException ex) {
+            _messages.add(new PositionalArgumentMessage(MessageType.ERROR, arg, ex.getMessage()));
+            _positionalSpecifications.add(new EmptyValue());
+        }
     }
 
     private void processSwitch(
