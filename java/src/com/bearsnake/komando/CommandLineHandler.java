@@ -13,25 +13,16 @@ import java.util.Map;
 
 public class CommandLineHandler {
 
-    public static class Result {
-        public final boolean _isSuccessful;
-        public final String[] _messages;
-        public final Map<String, Object> _dictionary;
-
-        public Result(
-            final boolean isSuccessful,
-            final List<String> messages,
-            final Map<String, Object> dictionary
-        ) {
-            _isSuccessful = isSuccessful;
-            _messages = messages.toArray(new String[0]);
-            _dictionary = dictionary;
-        }
-    }
-
     private final List<PositionalArgument> _positionalArguments = new LinkedList<>();
     private final List<Switch> _switches = new LinkedList<>();
     private final List<MutualExclusion> _mutualExclusions = new LinkedList<>();
+
+    private int _argIndex;
+    private boolean _errorFlag;
+    private boolean _fatalFlag;
+    private final List<ProcessMessage> _messages = new LinkedList<>();
+    private final Map<Switch, Object> _switchSpecifications = new HashMap<>();
+    private final List<Object> _positionalSpecifications = new LinkedList<>();
 
     public CommandLineHandler addCanonicalHelpSwitch() throws KommandoException {
         var sw = new SimpleSwitch.Builder().setShortName("h")
@@ -127,73 +118,47 @@ public class CommandLineHandler {
         }
     }
 
-    public Result processCommandLine(
+    public void processPositionalArgument(
+        final String arg
+    ) {
+
+    }
+
+    public void processSwitch(
+        final String arg
+    ) {
+
+    }
+
+
+    public ProcessResult processCommandLine(
         final String[] args
     ) {
-        var isSuccessful = true;
-        var dictionary = new HashMap<String, Object>();
-        var messages = new LinkedList<String>();
+        _argIndex = 0;
+        _errorFlag = false;
+        _fatalFlag = false;
+        _messages.clear();
+        _positionalSpecifications.clear();
+        _switchSpecifications.clear();
 
-        var ax = 0;
-        var posArgX = 0;
         var checkSwitch = true;
-        while (ax < args.length) {
-            var arg = args[ax++];
+        while (_argIndex < args.length) {
+            var arg = args[_argIndex++];
 
-            //  Is this a switch?
-            if (checkSwitch) {
-                Switch sw = null;
-                if (arg.startsWith("--")) {
-                    var chopArg = arg.substring(2);
-                    if (chopArg.isEmpty()) {
-                        checkSwitch = false;
-                        continue;
-                    }
-
-                    for (var chkSw : _switches) {
-                        if (chopArg.equals(chkSw._longName)) {
-                            sw = chkSw;
-                            break;
-                        }
-                    }
-                } else if (arg.startsWith("-")) {
-                    var chopArg = arg.substring(1);
-                    if (chopArg.isEmpty()) {
-                        // TODO error, simple hyphen is illegal
-                        continue;
-                    }
-
-                    for (var chkSw : _switches) {
-                        if (chopArg.equals(chkSw._shortName)) {
-                            sw = chkSw;
-                            break;
-                        }
-                    }
+            if (checkSwitch && arg.startsWith("-")) {
+                if (arg.equals("--")) {
+                    checkSwitch = false;
+                } else {
+                    processSwitch(arg);
                 }
-
-                if (sw == null) {
-                    // TODO error - switch not found
-                }
-
-                String value = null;
-                if (sw instanceof ArgumentSwitch as) {
-                    // TODO find value for argument switch
-                    //  is it 'switch=value' or 'switch value'
-                }
-
-                // TODO handle switch
-            }
-
-            //  This is a positional arg
-            if (posArgX == _positionalArguments.size()) {
-                var msg = String.format("Error at '%s': Too many positional arguments", args[ax]);
-                messages.add(msg);
-                ax++;
             } else {
-                // TODO handle argument
+                processPositionalArgument(arg);
             }
         }
 
-        return new Result(isSuccessful, messages, dictionary);
+        //  TODO check for mutual exclusion violations
+        //  TODO ensure all required things are specified
+
+        return new ProcessResult(!(_errorFlag || _fatalFlag), _messages, _switchSpecifications, _positionalSpecifications);
     }
 }
