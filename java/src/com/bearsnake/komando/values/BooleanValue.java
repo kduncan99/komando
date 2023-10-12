@@ -1,9 +1,10 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando.values;
 
+import com.bearsnake.komando.exceptions.ComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class BooleanValue extends Value {
@@ -38,4 +39,22 @@ public class BooleanValue extends Value {
         }
     }
 
+    @Override
+    public boolean equals(
+        final Object obj
+    ) {
+        return (obj instanceof BooleanValue sv) && (_value.equals(sv._value));
+    }
+
+    @Override
+    public int hashCode() {
+        return _value.hashCode();
+    }
+
+    @Override
+    public int compareTo(
+        final Value o
+    ) {
+        throw new ComparableException(this, o);
+    }
 }

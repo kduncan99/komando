@@ -1,10 +1,10 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando;
 
-import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.KomandoException;
 import com.bearsnake.komando.exceptions.ParseException;
 import com.bearsnake.komando.messages.Message;
 import com.bearsnake.komando.messages.MessageType;
@@ -13,7 +13,10 @@ import com.bearsnake.komando.messages.SwitchMessage;
 import com.bearsnake.komando.values.EmptyValue;
 import com.bearsnake.komando.values.Value;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class CommandLineHandler {
 
@@ -56,23 +59,33 @@ public class CommandLineHandler {
     private final Map<Switch, List<Value>> _switchSpecifications = new HashMap<>();
     private final List<Value> _positionalSpecifications = new LinkedList<>();
 
+    static final Switch HELP_SWITCH;
+    static final Switch VERSION_SWITCH;
+
+    static {
+        try {
+            HELP_SWITCH = new SimpleSwitch.Builder().setShortName("h")
+                                                       .setLongName("help")
+                                                       .addDescription("Displays usage for this program.")
+                                                       .build();
+            VERSION_SWITCH = new SimpleSwitch.Builder().setShortName("v")
+                                                           .setLongName("version")
+                                                           .addDescription("Displays program version.")
+                                                           .build();
+        } catch (KomandoException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // TODO doc this
-    public CommandLineHandler addCanonicalHelpSwitch() throws KommandoException {
-        var sw = new SimpleSwitch.Builder().setShortName("h")
-                                           .setLongName("help")
-                                           .addDescription("Displays usage for this program.")
-                                           .build();
-        _switches.add(sw);
+    public CommandLineHandler addCanonicalHelpSwitch() throws KomandoException {
+        _switches.add(HELP_SWITCH);
         return this;
     }
 
     // TODO doc this
-    public CommandLineHandler addCanonicalVersionSwitch() throws KommandoException {
-        var sw = new SimpleSwitch.Builder().setShortName("v")
-                                           .setLongName("version")
-                                           .addDescription("Displays program version.")
-                                           .build();
-        _switches.add(sw);
+    public CommandLineHandler addCanonicalVersionSwitch() throws KomandoException {
+        _switches.add(VERSION_SWITCH);
         return this;
     }
 
@@ -191,18 +204,32 @@ public class CommandLineHandler {
             }
         }
 
-        // check for required switches
-        for (var swch : _switches) {
-            if (swch.isRequired() && !_switchSpecifications.containsKey(swch)) {
-                _messages.add(new SwitchMessage(MessageType.ERROR, swch, "Required but not specified"));
-            }
-        }
+        var help = _switchSpecifications.containsKey(HELP_SWITCH);
+        var version = _switchSpecifications.containsKey(VERSION_SWITCH);
 
-        // check for dependencies
-        for (var dep : _dependencies) {
-            if (_switchSpecifications.containsKey(dep._subject) && !_switchSpecifications.containsKey(dep._dependency)) {
-                var msg = String.format("Requires unspecified switch %s", dep._dependency);
-                _messages.add(new SwitchMessage(MessageType.ERROR, dep._subject, msg));
+        if (!help && !version) {
+            // check for required switches...
+            for (var swch : _switches) {
+                if (swch.isRequired() && !_switchSpecifications.containsKey(swch)) {
+                    _messages.add(new SwitchMessage(MessageType.ERROR, swch, "Required but not specified"));
+                }
+            }
+
+            // check for dependencies
+            for (var dep : _dependencies) {
+                if (_switchSpecifications.containsKey(dep._subject) && !_switchSpecifications.containsKey(dep._dependency)) {
+                    var msg = String.format("Requires unspecified switch %s", dep._dependency);
+                    _messages.add(new SwitchMessage(MessageType.ERROR, dep._subject, msg));
+                }
+            }
+
+            // check for required positional arguments
+            int px = 0;
+            for (var posArg : _positionalArguments) {
+                if (posArg.isRequired() && (px >= _positionalSpecifications.size())) {
+                    _messages.add(new PositionalArgumentMessage(MessageType.ERROR, posArg, "Required but not specified"));
+                }
+                px++;
             }
         }
 
@@ -212,15 +239,6 @@ public class CommandLineHandler {
                 var msg = String.format("May not be specified with switch %s", ex._switch2.toString());
                 _messages.add(new SwitchMessage(MessageType.ERROR, ex._switch1, msg));
             }
-        }
-
-        // check for required positional arguments
-        int px = 0;
-        for (var posArg : _positionalArguments) {
-            if (posArg.isRequired() && (px >= _positionalSpecifications.size())) {
-                _messages.add(new PositionalArgumentMessage(MessageType.ERROR, posArg, "Required but not specified"));
-            }
-            px++;
         }
 
         return new Result(_messages, _switchSpecifications, _positionalSpecifications);
@@ -280,8 +298,9 @@ public class CommandLineHandler {
         var arg = _positionalArguments.get(_positionalSpecifications.size());
         try {
             var value = Value.parseText(argText, arg.getValueType());
+            arg.checkRestriction(value);
             _positionalSpecifications.add(value);
-        } catch (ParseException ex) {
+        } catch (KomandoException ex) {
             _messages.add(new PositionalArgumentMessage(MessageType.ERROR, arg, ex.getMessage()));
             _positionalSpecifications.add(new EmptyValue());
         }

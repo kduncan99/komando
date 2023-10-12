@@ -1,9 +1,10 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando.values;
 
+import com.bearsnake.komando.exceptions.ComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class FixedPointValue extends Value {
@@ -34,6 +35,33 @@ public class FixedPointValue extends Value {
             return new FixedPointValue(Long.parseLong(chop, hexFlag ? 16 : 10));
         } catch (NumberFormatException ex) {
             throw new ParseException(String.format("'%s' is not a valid integer", input));
+        }
+    }
+
+    @Override
+    public boolean equals(
+        final Object obj
+    ) {
+        return (obj instanceof FixedPointValue sv) && (_value.equals(sv._value));
+    }
+
+    @Override
+    public int hashCode() {
+        return _value.hashCode();
+    }
+
+    @Override
+    public int compareTo(
+        final Value o
+    ) {
+        if (o instanceof FixedPointValue fpv) {
+            return _value.compareTo(fpv._value);
+        } else if (o instanceof FloatingPointValue fpv) {
+            double flt = fpv.getValue();
+            long fixed = (long) flt;
+            return _value.compareTo(fixed);
+        } else {
+            throw new ComparableException(this, o);
         }
     }
 }

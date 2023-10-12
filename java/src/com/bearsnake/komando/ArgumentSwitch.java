@@ -1,11 +1,13 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando;
 
 import com.bearsnake.komando.exceptions.FieldNotSpecifiedException;
-import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.KomandoException;
+import com.bearsnake.komando.restrictions.Restriction;
+import com.bearsnake.komando.values.Value;
 import com.bearsnake.komando.values.ValueType;
 
 import java.util.LinkedList;
@@ -20,6 +22,7 @@ public class ArgumentSwitch extends Switch {
 
     private final boolean _isMultiple;
     private final boolean _isRequired;
+    private final Restriction _restriction;
     private final String _valueName;
     private final ValueType _valueType;
 
@@ -30,11 +33,13 @@ public class ArgumentSwitch extends Switch {
         final boolean isRequired,
         final boolean isMultiple,
         final String valueName,
-        final ValueType valueType
+        final ValueType valueType,
+        final Restriction restriction
     ) {
         super(shortName, longName, description);
         _isMultiple = isMultiple;
         _isRequired = isRequired;
+        _restriction = restriction;
         _valueName = valueName;
         _valueType = valueType;
     }
@@ -42,6 +47,14 @@ public class ArgumentSwitch extends Switch {
     public boolean isMultiple() { return _isMultiple; }
     public String getValueName() { return _valueName; }
     public ValueType getValueType() { return _valueType; }
+
+    public void checkRestriction(
+        final Value value
+    ) throws KomandoException {
+        if (_restriction != null) {
+            _restriction.check(value);
+        }
+    }
 
     @Override
     public boolean isRequired() { return _isRequired; }
@@ -51,6 +64,7 @@ public class ArgumentSwitch extends Switch {
         private boolean _isMultiple = false;
         private boolean _isRequired = false;
         private String _longName = null;
+        private Restriction _restriction = null;
         private String _shortName = null;
         private String _valueName = null;
         private ValueType _valueType = null;
@@ -59,11 +73,12 @@ public class ArgumentSwitch extends Switch {
         public Builder setIsMultiple(boolean value) { _isMultiple = value; return this; }
         public Builder setIsRequired(boolean value) { _isRequired = value; return this; }
         public Builder setLongName(String value) { _longName = value; return this; }
+        public Builder setRestriction(Restriction value) { _restriction = value; return this; }
         public Builder setShortName(String value) { _shortName = value; return this; }
         public Builder setValueName(String value) { _valueName = value; return this; }
         public Builder setValueType(ValueType value) { _valueType = value; return this; }
 
-        public ArgumentSwitch build() throws KommandoException {
+        public ArgumentSwitch build() throws KomandoException {
             if (_shortName == null) {
                 throw new FieldNotSpecifiedException("shortName");
             }
@@ -87,7 +102,8 @@ public class ArgumentSwitch extends Switch {
                 _isRequired,
                 _isMultiple,
                 _valueName,
-                _valueType
+                _valueType,
+                _restriction
             );
         }
     }

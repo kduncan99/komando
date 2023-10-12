@@ -1,10 +1,10 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando;
 
-import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.KomandoException;
 import com.bearsnake.komando.values.ValueType;
 
 public class Main {
@@ -12,7 +12,7 @@ public class Main {
     //  temporary code
     public static void main(
         final String[] args
-    ) throws KommandoException {
+    ) throws KomandoException {
         var usernameSwitch = new ArgumentSwitch.Builder().setShortName("u")
                                                          .setLongName("username")
                                                          .addDescription("User name credentials for access to the flux capacitor.")

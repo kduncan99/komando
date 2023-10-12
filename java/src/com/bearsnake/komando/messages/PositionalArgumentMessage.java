@@ -1,4 +1,4 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
@@ -21,7 +21,7 @@ public class PositionalArgumentMessage extends Message {
 
     @Override
     public String toString() {
-        return String.format("%s:Positional Argument %s:%s",
+        return String.format("%s:Positional Argument {%s}:%s",
                              getProcessMessageType(),
                              _arg.getValueName(),
                              getMessage());

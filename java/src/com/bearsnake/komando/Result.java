@@ -1,4 +1,4 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
@@ -44,5 +44,13 @@ public class Result {
             }
         }
         return false;
+    }
+
+    public boolean isHelpRequested() {
+        return _switchSpecifications.containsKey(CommandLineHandler.HELP_SWITCH);
+    }
+
+    public boolean isVersionRequested() {
+        return _switchSpecifications.containsKey(CommandLineHandler.VERSION_SWITCH);
     }
 }

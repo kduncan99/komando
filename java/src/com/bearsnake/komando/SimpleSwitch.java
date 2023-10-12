@@ -1,11 +1,11 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando;
 
 import com.bearsnake.komando.exceptions.FieldNotSpecifiedException;
-import com.bearsnake.komando.exceptions.KommandoException;
+import com.bearsnake.komando.exceptions.KomandoException;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +38,7 @@ public class SimpleSwitch extends Switch {
         public Builder setLongName(String value) { _longName = value; return this; }
         public Builder setShortName(String value) { _shortName = value; return this; }
 
-        public Switch build() throws KommandoException {
+        public Switch build() throws KomandoException {
             if (_shortName == null) {
                 throw new FieldNotSpecifiedException("shortName");
             }

@@ -1,9 +1,10 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
 package com.bearsnake.komando.values;
 
+import com.bearsnake.komando.exceptions.ComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class StringValue extends Value {
@@ -52,5 +53,28 @@ public class StringValue extends Value {
         }
 
         return new StringValue(sb.toString());
+    }
+
+    @Override
+    public boolean equals(
+        final Object obj
+    ) {
+        return (obj instanceof StringValue sv) && (_value.equals(sv._value));
+    }
+
+    @Override
+    public int hashCode() {
+        return _value.hashCode();
+    }
+
+    @Override
+    public int compareTo(
+        final Value o
+    ) {
+        if (o instanceof StringValue stv) {
+            return _value.compareTo(stv._value);
+        } else {
+            throw new ComparableException(this, o);
+        }
     }
 }

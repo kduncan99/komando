@@ -1,4 +1,4 @@
-// Kommando project
+// Komando project
 // Copyright © 2023 by Kurt Duncan, BearSnake LLC
 // All Rights Reserved
 
@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class Value {
+public abstract class Value implements Comparable<Value> {
 
     public static List<Object> parseList(
         final Collection<String> array,
