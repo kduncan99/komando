@@ -5,7 +5,7 @@
 package com.bearsnake.komando.values;
 
 import com.bearsnake.komando.exceptions.ParseException;
-import com.bearsnake.komando.exceptions.ComparableException;
+import com.bearsnake.komando.exceptions.ValuesNotComparableException;
 
 public class FloatingPointValue extends Value implements Comparable<Value> {
 
@@ -59,7 +59,7 @@ public class FloatingPointValue extends Value implements Comparable<Value> {
             double dbl = (double) fixed;
             return _value.compareTo(dbl);
         } else {
-            throw new ComparableException(this, o);
+            throw new ValuesNotComparableException(this, o);
         }
     }
 }

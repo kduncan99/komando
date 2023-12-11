@@ -4,7 +4,7 @@
 
 package com.bearsnake.komando.values;
 
-import com.bearsnake.komando.exceptions.ComparableException;
+import com.bearsnake.komando.exceptions.ValuesNotComparableException;
 
 public class EmptyValue extends Value {
 
@@ -31,6 +31,6 @@ public class EmptyValue extends Value {
     public int compareTo(
         final Value o
     ) {
-        throw new ComparableException(this, o);
+        throw new ValuesNotComparableException(this, o);
     }
 }

@@ -41,9 +41,11 @@ public class PositionalArgument {
     }
 
     public String[] getDescription() { return _description; }
-    public boolean isRequired() { return _isRequired; }
+    public Restriction getRestriction() { return _restriction; }
     public String getValueName() { return _valueName; }
     public ValueType getValueType() { return _valueType; }
+    public boolean isRequired() { return _isRequired; }
+    public boolean hasRestriction() { return _restriction != null; }
 
     public void checkRestriction(
         final Value value

@@ -4,19 +4,25 @@
 
 package com.bearsnake.komando;
 
+import com.bearsnake.komando.exceptions.CommandArgumentException;
 import com.bearsnake.komando.exceptions.KomandoException;
 import com.bearsnake.komando.exceptions.ParseException;
+import com.bearsnake.komando.messages.CommandArgumentMessage;
 import com.bearsnake.komando.messages.Message;
 import com.bearsnake.komando.messages.MessageType;
 import com.bearsnake.komando.messages.PositionalArgumentMessage;
 import com.bearsnake.komando.messages.SwitchMessage;
+import com.bearsnake.komando.values.CommandValue;
 import com.bearsnake.komando.values.EmptyValue;
+import com.bearsnake.komando.values.StringValue;
 import com.bearsnake.komando.values.Value;
+import com.bearsnake.komando.values.ValueType;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CommandLineHandler {
 
@@ -48,6 +54,7 @@ public class CommandLineHandler {
         }
     }
 
+    private CommandArgument _commandArgument = null;
     private final List<PositionalArgument> _positionalArguments = new LinkedList<>();
     private final List<Switch> _switches = new LinkedList<>();
     private final List<SwitchDependency> _dependencies = new LinkedList<>();
@@ -58,6 +65,10 @@ public class CommandLineHandler {
     private final List<Message> _messages = new LinkedList<>();
     private final Map<Switch, List<Value>> _switchSpecifications = new HashMap<>();
     private final List<Value> _positionalSpecifications = new LinkedList<>();
+
+    // chosenCommand will be the reference to one of the CommandValue objects passed to the CommandArgument
+    // object if it was specified. It will be null if we were not given a CommandArgument.
+    private CommandValue _chosenCommand = null;
 
     static final Switch HELP_SWITCH;
     static final Switch VERSION_SWITCH;
@@ -86,6 +97,18 @@ public class CommandLineHandler {
     // TODO doc this
     public CommandLineHandler addCanonicalVersionSwitch() throws KomandoException {
         _switches.add(VERSION_SWITCH);
+        return this;
+    }
+
+    // TODO doc this
+    public CommandLineHandler addCommandArgument(
+        final CommandArgument value
+    ) {
+        if (_commandArgument != null) {
+            throw new CommandArgumentException();
+        }
+
+        _commandArgument = value;
         return this;
     }
 
@@ -137,6 +160,11 @@ public class CommandLineHandler {
         if (!_switches.isEmpty()) {
             sb.append(" {switches}");
         }
+
+        if (_commandArgument != null) {
+            sb.append(" command");
+        }
+
         for (var posArg : _positionalArguments) {
             sb.append(" ")
               .append(posArg.isRequired() ? "" : "[")
@@ -164,15 +192,38 @@ public class CommandLineHandler {
                 }
                 System.err.println(sb);
 
+                if (!sw._affinity.isEmpty()) {
+                    sb.setLength(0);
+                    sb.append("    Only applies to command(s): ");
+                    var commandStrings = sw._affinity.stream()
+                                                     .map(StringValue::getValue)
+                                                     .collect(Collectors.toCollection(LinkedList::new));
+                    sb.append(String.join(", ", commandStrings));
+                    System.err.println(sb);
+                }
+
                 for (var desc : sw._description) {
                     System.err.printf("    %s\n", desc);
                 }
             }
         }
 
+        if (_commandArgument != null) {
+            System.err.println();
+            System.err.printf("command %s", _commandArgument.getChoicesString());
+
+            for (var desc : _commandArgument.getDescription()) {
+                System.err.printf("  %s\n", desc);
+            }
+        }
+
         for (var posArg : _positionalArguments) {
             System.err.println();
-            System.err.printf("%s (%s)\n", posArg.getValueName(), posArg.getValueType().name().toLowerCase());
+            System.err.printf("%s (%s)%s\n",
+                              posArg.getValueName(),
+                              posArg.getValueType().name().toLowerCase(),
+                              posArg.hasRestriction() ? posArg.getRestriction().toString() : "");
+
             for (var desc : posArg.getDescription()) {
                 System.err.printf("  %s\n", desc);
             }
@@ -199,31 +250,63 @@ public class CommandLineHandler {
                 } else {
                     processSwitch(arg);
                 }
+            } else if ((_commandArgument != null) && (_chosenCommand == null)) {
+                processCommandArgument(arg);
             } else {
                 processPositionalArgument(arg);
             }
         }
 
+        // Special checking for canonical help/version switches
         var help = _switchSpecifications.containsKey(HELP_SWITCH);
         var version = _switchSpecifications.containsKey(VERSION_SWITCH);
 
+        // Do all the verification checking for the various switch and argument combinations,
+        // but *only* if we are not doing help or version - in those cases, we ignore all the rest.
         if (!help && !version) {
-            // check for required switches...
-            for (var swch : _switches) {
-                if (swch.isRequired() && !_switchSpecifications.containsKey(swch)) {
-                    _messages.add(new SwitchMessage(MessageType.ERROR, swch, "Required but not specified"));
+            // Check the command - if we have a command argument
+            if ((_commandArgument != null) && (_chosenCommand == null)) {
+                _messages.add(new CommandArgumentMessage(MessageType.ERROR, "Required but not specified"));
+            }
+
+            // Ensure that all required switches were specified. This does not apply if there was a command argument,
+            // and the otherwise-required switch does not have affinity with the given command.
+            for (var sw : _switches) {
+                if (sw.isRequired() && switchIsApplicable(sw) && !_switchSpecifications.containsKey(sw)) {
+                    _messages.add(new SwitchMessage(MessageType.ERROR, sw, "Required but not specified"));
                 }
             }
 
-            // check for dependencies
+            if (_chosenCommand != null) {
+                for (var sw : _switchSpecifications.keySet()) {
+                    var msg = "Switch does not apply to '" + _chosenCommand.getValue() + "' command";
+                    if (!switchIsApplicable(sw)) {
+                        _messages.add(new SwitchMessage(MessageType.WARNING, sw, msg));
+                    }
+                }
+            }
+
+            // Check for switch dependencies.
             for (var dep : _dependencies) {
-                if (_switchSpecifications.containsKey(dep._subject) && !_switchSpecifications.containsKey(dep._dependency)) {
-                    var msg = String.format("Requires unspecified switch %s", dep._dependency);
-                    _messages.add(new SwitchMessage(MessageType.ERROR, dep._subject, msg));
+                if (switchIsApplicable(dep._subject) && switchIsApplicable(dep._dependency)) {
+                    if (_switchSpecifications.containsKey(dep._subject) && !_switchSpecifications.containsKey(dep._dependency)) {
+                        var msg = String.format("Requires unspecified switch %s", dep._dependency);
+                        _messages.add(new SwitchMessage(MessageType.ERROR, dep._subject, msg));
+                    }
                 }
             }
 
-            // check for required positional arguments
+            // Check for switch exclusions
+            for (var ex : _exclusions) {
+                if (switchIsApplicable(ex._switch1) && switchIsApplicable(ex._switch2)) {
+                    if (_switchSpecifications.containsKey(ex._switch1) && _switchSpecifications.containsKey(ex._switch2)) {
+                        var msg = String.format("May not be specified with switch %s", ex._switch2.toString());
+                        _messages.add(new SwitchMessage(MessageType.ERROR, ex._switch1, msg));
+                    }
+                }
+            }
+
+            // Check for required positional arguments
             int px = 0;
             for (var posArg : _positionalArguments) {
                 if (posArg.isRequired() && (px >= _positionalSpecifications.size())) {
@@ -233,20 +316,12 @@ public class CommandLineHandler {
             }
         }
 
-        // check for exclusions
-        for (var ex : _exclusions) {
-            if (_switchSpecifications.containsKey(ex._switch1) && _switchSpecifications.containsKey(ex._switch2)) {
-                var msg = String.format("May not be specified with switch %s", ex._switch2.toString());
-                _messages.add(new SwitchMessage(MessageType.ERROR, ex._switch1, msg));
-            }
-        }
-
-        return new Result(_messages, _switchSpecifications, _positionalSpecifications);
+        return new Result(_messages, _chosenCommand, _switchSpecifications, _positionalSpecifications);
     }
 
     private void processArgumentSwitch(
         final String[] argTokens,
-        final ArgumentSwitch swch
+        final ArgumentSwitch argSwitch
     ) {
         String rawValues;
         if (argTokens.length == 2) {
@@ -255,17 +330,16 @@ public class CommandLineHandler {
         } else {
             // the value(s) is/are given in the following argument token
             if (_argIndex == _arguments.length) {
-                _messages.add(new SwitchMessage(MessageType.ERROR, swch, "No value specified for switch"));
+                _messages.add(new SwitchMessage(MessageType.ERROR, argSwitch, "No value specified for switch"));
                 return;
             }
             rawValues = _arguments[_argIndex++];
         }
 
-        // TODO we need a special version of split which honors single- and double-quote delimiters
-        var subTokens = rawValues.split(",");
-        if (!swch.isMultiple()) {
-            if (_switchSpecifications.containsKey(swch) || (subTokens.length > 1)) {
-                _messages.add(new SwitchMessage(MessageType.ERROR, swch, "Multiple values specified for singly-valued switch"));
+        var subTokens = split(rawValues, ',');
+        if (!argSwitch.isMultiple()) {
+            if (_switchSpecifications.containsKey(argSwitch) || (subTokens.length > 1)) {
+                _messages.add(new SwitchMessage(MessageType.ERROR, argSwitch, "Multiple values specified for singly-valued switch"));
                 return;
             }
         }
@@ -273,17 +347,32 @@ public class CommandLineHandler {
         List<Value> values = new LinkedList<>();
         for (var token : subTokens) {
             try {
-                values.add(Value.parseText(token, swch.getValueType()));
+                values.add(Value.parseText(token, argSwitch.getValueType()));
             } catch (ParseException ex) {
-                _messages.add(new SwitchMessage(MessageType.ERROR, swch, ex.getMessage()));
+                _messages.add(new SwitchMessage(MessageType.ERROR, argSwitch, ex.getMessage()));
                 return;
             }
         }
 
-        if (!_switchSpecifications.containsKey(swch)) {
-            _switchSpecifications.put(swch, values);
+        if (!_switchSpecifications.containsKey(argSwitch)) {
+            _switchSpecifications.put(argSwitch, values);
         } else {
-            _switchSpecifications.get(swch).addAll(values);
+            _switchSpecifications.get(argSwitch).addAll(values);
+        }
+    }
+
+    private void processCommandArgument(
+        final String argText
+    ) {
+        try {
+            var value = (StringValue) Value.parseText(argText, ValueType.STRING);
+            _chosenCommand = _commandArgument.findCommandValueForString(value);
+            if (_chosenCommand == null) {
+                var msg = "'" + value + "' is not a valid command";
+                _messages.add(new CommandArgumentMessage(MessageType.ERROR, msg));
+            }
+        } catch (KomandoException ex) {
+            _messages.add(new CommandArgumentMessage(MessageType.ERROR, ex.getMessage()));
         }
     }
 
@@ -309,9 +398,7 @@ public class CommandLineHandler {
     private void processSwitch(
         final String arg
     ) {
-        // TODO we need a special version of split which honors single- and double-quote delimiters
-        var tokens = arg.split("=");
-
+        var tokens = split(arg, '=');
         Switch swch = null;
         if (tokens[0].startsWith("--")) {
             var chop = tokens[0].substring(2);
@@ -342,5 +429,51 @@ public class CommandLineHandler {
                 _switchSpecifications.put(swch, null);
             }
         }
+    }
+
+    private static String[] split(
+        final String input,
+        final Character delimiter
+    ) {
+        // This special version of String.split() will not check for delimiters inside double-quoted string segments.
+        var temp = new LinkedList<String>();
+        char quoteChar = 0;
+        var sb = new StringBuilder();
+        for (var ix = 0; ix < input.length(); ++ix) {
+            var ch = input.charAt(ix);
+            if (quoteChar != 0) {
+                // we are inside a quoted section
+                if (ch == quoteChar) {
+                    // end of quoted section
+                    quoteChar = 0;
+                } else {
+                    sb.append(ch);
+                }
+            } else {
+                // we are *not* inside a quoted section
+                if ((ch == '\'') || (ch == '"')) {
+                    quoteChar = ch;
+                } else {
+                    if (ch == delimiter) {
+                        temp.add(sb.toString());
+                        sb.setLength(0);
+                    } else {
+                        sb.append(ch);
+                    }
+                }
+            }
+        }
+
+        // TODO someday we should complain if we are here and still in a quoted section
+        temp.add(sb.toString());
+        return temp.toArray(new String[0]);
+    }
+
+    private boolean switchIsApplicable(
+        final Switch sw
+    ) {
+        // This switch does *not* apply if there is a command argument,
+        // and the switch has affinity with any commands, but not the chosen command.
+        return !((_commandArgument != null) && sw.hasAffinity() && !sw.hasAffinityWith(_chosenCommand));
     }
 }

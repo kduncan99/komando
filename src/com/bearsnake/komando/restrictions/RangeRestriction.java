@@ -8,6 +8,9 @@ import com.bearsnake.komando.exceptions.KomandoException;
 import com.bearsnake.komando.exceptions.RestrictionException;
 import com.bearsnake.komando.values.Value;
 
+/**
+ * Describes a restriction ranging from the lower value to the upper value, inclusive
+ */
 public class RangeRestriction extends Restriction {
 
     private final Value _lowerLimit;
@@ -26,5 +29,10 @@ public class RangeRestriction extends Restriction {
         if ((value.compareTo(_lowerLimit) < 0) || (value.compareTo(_upperLimit) > 0)) {
             throw new RestrictionException(value);
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s <= value <= %s", _lowerLimit, _upperLimit);
     }
 }

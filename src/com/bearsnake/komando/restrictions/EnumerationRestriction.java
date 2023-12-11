@@ -32,6 +32,8 @@ public class EnumerationRestriction extends Restriction {
                                      .collect(Collectors.toCollection(LinkedList::new)));
     }
 
+    public Collection<Value> getAcceptedValues() { return new LinkedList<>(_acceptedValues); }
+
     @Override
     public void check(Value value) throws KomandoException {
         for (var av : _acceptedValues) {
@@ -41,5 +43,21 @@ public class EnumerationRestriction extends Restriction {
         }
 
         throw new RestrictionException(value);
+    }
+
+    @Override
+    public String toString() {
+        var sb = new StringBuilder();
+        sb.append("[ ");
+        var first = true;
+        for (var av : _acceptedValues) {
+            if (!first) {
+                sb.append(" | ");
+            }
+            sb.append(av.toString());
+            first = false;
+        }
+        sb.append(" ]");
+        return sb.toString();
     }
 }

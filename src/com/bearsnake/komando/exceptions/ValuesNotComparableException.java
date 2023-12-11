@@ -6,9 +6,9 @@ package com.bearsnake.komando.exceptions;
 
 import com.bearsnake.komando.values.Value;
 
-public class ComparableException extends RuntimeException {
+public class ValuesNotComparableException extends RuntimeException {
 
-    public ComparableException(
+    public ValuesNotComparableException(
         final Value value1,
         final Value value2
     ) {

@@ -6,6 +6,7 @@ package com.bearsnake.komando;
 
 import com.bearsnake.komando.messages.Message;
 import com.bearsnake.komando.messages.MessageType;
+import com.bearsnake.komando.values.CommandValue;
 import com.bearsnake.komando.values.Value;
 
 import java.util.List;
@@ -14,15 +15,18 @@ import java.util.Map;
 public class Result {
 
     public final List<Message> _messages;
+    public final CommandValue _commandValue;
     public final Map<Switch, List<Value>> _switchSpecifications;
     public final List<Value> _positionalArgumentSpecifications;
 
     public Result(
         final List<Message> messages,
+        final CommandValue commandValue,
         final Map<Switch, List<Value>> switchSpecifications,
         final List<Value> positionalArgumentSpecifications
     ) {
         _messages = messages;
+        _commandValue = commandValue;
         _switchSpecifications = switchSpecifications;
         _positionalArgumentSpecifications = positionalArgumentSpecifications;
     }

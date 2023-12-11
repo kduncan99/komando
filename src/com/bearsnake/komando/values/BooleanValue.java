@@ -4,7 +4,7 @@
 
 package com.bearsnake.komando.values;
 
-import com.bearsnake.komando.exceptions.ComparableException;
+import com.bearsnake.komando.exceptions.ValuesNotComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class BooleanValue extends Value {
@@ -55,6 +55,6 @@ public class BooleanValue extends Value {
     public int compareTo(
         final Value o
     ) {
-        throw new ComparableException(this, o);
+        throw new ValuesNotComparableException(this, o);
     }
 }

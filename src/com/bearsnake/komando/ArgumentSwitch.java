@@ -7,6 +7,7 @@ package com.bearsnake.komando;
 import com.bearsnake.komando.exceptions.FieldNotSpecifiedException;
 import com.bearsnake.komando.exceptions.KomandoException;
 import com.bearsnake.komando.restrictions.Restriction;
+import com.bearsnake.komando.values.CommandValue;
 import com.bearsnake.komando.values.Value;
 import com.bearsnake.komando.values.ValueType;
 
@@ -30,13 +31,14 @@ public class ArgumentSwitch extends Switch {
         final String shortName,
         final String longName,
         final String[] description,
+        final CommandValue[] affinity,
         final boolean isRequired,
         final boolean isMultiple,
         final String valueName,
         final ValueType valueType,
         final Restriction restriction
     ) {
-        super(shortName, longName, description);
+        super(shortName, longName, description, affinity);
         _isMultiple = isMultiple;
         _isRequired = isRequired;
         _restriction = restriction;
@@ -60,6 +62,7 @@ public class ArgumentSwitch extends Switch {
     public boolean isRequired() { return _isRequired; }
 
     public static class Builder {
+        private final List<CommandValue> _affinity = new LinkedList<>();
         private final List<String> _description = new LinkedList<>();
         private boolean _isMultiple = false;
         private boolean _isRequired = false;
@@ -69,6 +72,7 @@ public class ArgumentSwitch extends Switch {
         private String _valueName = null;
         private ValueType _valueType = null;
 
+        public Builder addAffinity(CommandValue value) { _affinity.add(value); return this; }
         public Builder addDescription(String value) { _description.add(value); return this; }
         public Builder setIsMultiple(boolean value) { _isMultiple = value; return this; }
         public Builder setIsRequired(boolean value) { _isRequired = value; return this; }
@@ -99,6 +103,7 @@ public class ArgumentSwitch extends Switch {
                 _shortName,
                 _longName,
                 _description.toArray(new String[0]),
+                _affinity.toArray(new CommandValue[0]),
                 _isRequired,
                 _isMultiple,
                 _valueName,

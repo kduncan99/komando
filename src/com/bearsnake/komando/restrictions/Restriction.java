@@ -10,4 +10,5 @@ import com.bearsnake.komando.values.Value;
 public abstract class Restriction {
 
     public abstract void check(final Value value) throws KomandoException;
+    public abstract String toString(); // force implementation by subclasses
 }

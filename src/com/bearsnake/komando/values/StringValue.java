@@ -4,7 +4,7 @@
 
 package com.bearsnake.komando.values;
 
-import com.bearsnake.komando.exceptions.ComparableException;
+import com.bearsnake.komando.exceptions.ValuesNotComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class StringValue extends Value {
@@ -74,7 +74,7 @@ public class StringValue extends Value {
         if (o instanceof StringValue stv) {
             return _value.compareTo(stv._value);
         } else {
-            throw new ComparableException(this, o);
+            throw new ValuesNotComparableException(this, o);
         }
     }
 }

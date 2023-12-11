@@ -4,7 +4,7 @@
 
 package com.bearsnake.komando.values;
 
-import com.bearsnake.komando.exceptions.ComparableException;
+import com.bearsnake.komando.exceptions.ValuesNotComparableException;
 import com.bearsnake.komando.exceptions.ParseException;
 
 public class FixedPointValue extends Value {
@@ -61,7 +61,7 @@ public class FixedPointValue extends Value {
             long fixed = (long) flt;
             return _value.compareTo(fixed);
         } else {
-            throw new ComparableException(this, o);
+            throw new ValuesNotComparableException(this, o);
         }
     }
 }
