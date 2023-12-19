@@ -22,9 +22,32 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class CommandLineHandler {
+
+    private static class RequirementSet {
+
+        // The command argument value is null if the requirement applies to the entire application
+        public final CommandValue _command;
+        public final Set<Switch> _switches;
+
+        RequirementSet(
+            final Set<Switch> switches
+        ) {
+            this(null, switches);
+        }
+
+        RequirementSet(
+            final CommandValue command,
+            final Set<Switch> switches
+        ) {
+            _command = command;
+            _switches = new TreeSet<>(switches);
+        }
+    }
 
     private static class SwitchDependency {
 
@@ -59,6 +82,7 @@ public class CommandLineHandler {
     private final List<Switch> _switches = new LinkedList<>();
     private final List<SwitchDependency> _dependencies = new LinkedList<>();
     private final List<SwitchPair> _exclusions = new LinkedList<>();
+    private final List<RequirementSet> _requirementSets = new LinkedList<>();
 
     private String[] _arguments;
     private int _argIndex;
@@ -76,31 +100,50 @@ public class CommandLineHandler {
     static {
         try {
             HELP_SWITCH = new SimpleSwitch.Builder().setShortName("h")
-                                                       .setLongName("help")
-                                                       .addDescription("Displays usage for this program.")
-                                                       .build();
+                                                    .setLongName("help")
+                                                    .addDescription("Displays usage for this program.")
+                                                    .build();
             VERSION_SWITCH = new SimpleSwitch.Builder().setShortName("v")
-                                                           .setLongName("version")
-                                                           .addDescription("Displays program version.")
-                                                           .build();
+                                                       .setLongName("version")
+                                                       .addDescription("Displays program version.")
+                                                       .build();
         } catch (KomandoException e) {
             throw new RuntimeException(e);
         }
     }
 
-    // TODO doc this
-    public CommandLineHandler addCanonicalHelpSwitch() throws KomandoException {
+    /**
+     * Adds a SimpleSwitch to indicate that the user can request usage information.
+     * If specified, all other command line input is ignored, and a special flag is set in the
+     * processing result so that the calling code can do the right thing.
+     * @return this object
+     */
+    public CommandLineHandler addCanonicalHelpSwitch() {
         _switches.add(HELP_SWITCH);
         return this;
     }
 
-    // TODO doc this
-    public CommandLineHandler addCanonicalVersionSwitch() throws KomandoException {
+    /**
+     * Adds a SimpleSwitch to indicate that the user can request versioning information.
+     * If specified, all other command line input is ignored, and a special flag is set in the
+     * processing result so that the calling code can do the right thing.
+     * @return this object
+     */
+    public CommandLineHandler addCanonicalVersionSwitch() {
         _switches.add(VERSION_SWITCH);
         return this;
     }
 
-    // TODO doc this
+    /**
+     * Adds a command argument. A command argument is similar to a positional argument in that it can be
+     * specified anywhere amongst the switches, but it's meaning relies entirely upon where it is specified
+     * in relation to the other positional arguments.
+     * A command argument must appear ahead of all positional arguments.
+     * The command must be selected from a small list of options.
+     * Command arguments are optional, and only one may be specified.
+     * @param value the CommandArgument
+     * @return this object
+     */
     public CommandLineHandler addCommandArgument(
         final CommandArgument value
     ) {
@@ -112,7 +155,12 @@ public class CommandLineHandler {
         return this;
     }
 
-    // TODO doc this
+    /**
+     * Adds a switch dependency, such that the subject cannot be specified unless the dependency is also specified.
+     * @param subject The switch which is dependent upon some other switch
+     * @param dependency The switch which the subject depends upon
+     * @return this object
+     */
     public CommandLineHandler addDependency(
         final Switch subject,
         final Switch dependency
@@ -121,7 +169,14 @@ public class CommandLineHandler {
         return this;
     }
 
-    // TODO doc this
+    /**
+     * Adds a mutual exclusion.
+     * This identifies two switches, of which both may not be specified, although neither is an option.
+     * Neither of the switches should have their required flag set.
+     * @param switch1 one switch which is mutually exclusive with the other
+     * @param switch2 the other switch which is mutually exclusive with the first
+     * @return this object
+     */
     public CommandLineHandler addMutualExclusion(
         final Switch switch1,
         final Switch switch2
@@ -130,7 +185,13 @@ public class CommandLineHandler {
         return this;
     }
 
-    // TODO doc this
+    /**
+     * Adds a positional argument.
+     * Such an argument has meaning attached to where the specification occurs in relation to other positional
+     * arguments. Such arguments may be specified anywhere among switches.
+     * @param value The argument
+     * @return this object
+     */
     public CommandLineHandler addPositionalArgument(
         final PositionalArgument value
     ) {
@@ -138,7 +199,41 @@ public class CommandLineHandler {
         return this;
     }
 
-    // TODO doc this
+    /**
+     * Adds a requirement set.
+     * This is a set of switches, one of which must be specified by the user.
+     * None of the switches in this set should have their required flag set.
+     * By itself, this does not imply any mutual exclusivity - that is, it is not an error (mutual exclusivity aside)
+     * for the user to specify more than one of the switches in this set.
+     * Any particular switch may appear in more than one requirement set.
+     * It is possibly to specify a single switch for a set; however it is probably better to just set the required
+     * flag on the relevant switch.
+     * @param set collection of Switch objects, at least one of which must be specified by the user.
+     * @return this object
+     */
+    public CommandLineHandler addRequirementSet(
+        final Set<Switch> set
+    ) {
+        _requirementSets.add(new RequirementSet(set));
+        return this;
+    }
+
+    /**
+     * As above, but applying only to a particular command argument value
+     */
+    public CommandLineHandler addRequirementSet(
+        final CommandValue command,
+        final Set<Switch> set
+    ) {
+        _requirementSets.add(new RequirementSet(command, set));
+        return this;
+    }
+
+    /**
+     * Adds a switch specification to the command line handler
+     * @param value the switch to be added
+     * @return this object
+     */
     public CommandLineHandler addSwitch(
         final Switch value
     ) {
@@ -230,7 +325,11 @@ public class CommandLineHandler {
         }
     }
 
-    // TODO doc this
+    /**
+     * Processes the command line strings in the context of the previously-provided configuration.
+     * @param args Command line tokens
+     * @return Result object which is built according to the given command line text
+     */
     public Result processCommandLine(
         final String[] args
     ) {
@@ -274,6 +373,28 @@ public class CommandLineHandler {
             for (var sw : _switches) {
                 if (sw.isRequired() && switchIsApplicable(sw) && !_switchSpecifications.containsKey(sw)) {
                     _messages.add(new SwitchMessage(MessageType.ERROR, sw, "Required but not specified"));
+                }
+            }
+
+            for (var reqSet : _requirementSets) {
+                if ((reqSet._command == null) || reqSet._command.equals(_chosenCommand)) {
+                    var switches = reqSet._switches;
+                    var found = false;
+                    for (var sw : switches) {
+                        if (_switchSpecifications.containsKey(sw)) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        var msg = "At least one of the following switches must be specified:";
+                        var strs = switches.stream()
+                                           .map(Switch::toString)
+                                           .collect(Collectors.toCollection(LinkedList::new));
+                        msg += String.join(", ", strs);
+                        _messages.add(new Message(MessageType.ERROR, msg));
+                    }
                 }
             }
 

@@ -9,7 +9,7 @@ import com.bearsnake.komando.values.CommandValue;
 import java.util.Arrays;
 import java.util.Collection;
 
-public abstract class Switch {
+public abstract class Switch implements Comparable<Switch> {
 
     public final Collection<CommandValue> _affinity;
     public final String _shortName;
@@ -47,6 +47,13 @@ public abstract class Switch {
     }
 
     public abstract boolean isRequired();
+
+    @Override
+    public int compareTo(
+        Switch obj
+    ) {
+        return this.toString().compareTo(obj.toString());
+    }
 
     @Override
     public final String toString() {
