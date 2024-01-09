@@ -305,7 +305,7 @@ public class CommandLineHandler {
 
         if (_commandArgument != null) {
             System.err.println();
-            System.err.printf("command %s", _commandArgument.getChoicesString());
+            System.err.printf("command %s\n", _commandArgument.getChoicesString());
 
             for (var desc : _commandArgument.getDescription()) {
                 System.err.printf("  %s\n", desc);
